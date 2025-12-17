@@ -1,0 +1,12 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+jobs:
+  ci:
+    uses: withastro/automation/.github/workflows/format.yml@main
+    with:
+      command: "test"
+    secrets: inherit
