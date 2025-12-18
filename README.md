@@ -15,6 +15,7 @@ In order to use the workflow, the feature repo in question should:
    For example, in `ton-blockchain/ton` the workflow might look like this:
 
    ```yml
+   name: "TON Docs"
    on:
      pull_request_target:
        types: [opened, edited, labeled, unlabeled]

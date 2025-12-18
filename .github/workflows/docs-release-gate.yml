@@ -115,7 +115,7 @@ jobs:
                     'Due to the uncommented pattern in the description,',
                     'this request requires a documentation PR to be linked.',
                   ].join(' '),
-                  'Please, open the documentation PR and add the following to the description of this one.'
+                  'Please, open the documentation PR and add the following to the description of this one.',
                   'Docs PR: <link/to/pr/in/ton-org/docs>',
                 ].join('\n');
                 if (shouldError) {
