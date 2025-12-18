@@ -89,7 +89,8 @@ jobs:
             const body = context.payload.pull_request.body ?? '';
             const docsTextPattern = /(?:ton-?\s*)?docs?(?:\s+[mp]r)?:?/;
             // TODO: move to env, reuse below too:
-            const docsLinkPattern = /https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+)/;
+            const docsLinkPattern = /(?:https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+))/;
+            // const docsLinkPattern = /https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+)/;
             const linkPattern = new RegExp(`\\b${docsTextPattern.source}\s*(?:${docsLinkPattern.source})`, 'i');
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
             const link = body.match(linkPattern);
@@ -161,3 +162,4 @@ jobs:
               ].join('\n'));
               process.exit(1);
             }
+            core.info('Both PRs have the same author, as intended.');
