@@ -1,0 +1,142 @@
+name: TON Docs
+
+on:
+  workflow_call:
+    inputs:
+      should_error:
+        description: >
+          Whether to hard-fail or only warn when there is no linked documentation PR.
+        default: false
+        required: false
+        type: boolean
+
+      require_same_author:
+        description: >
+          Whether documentation PR should have the same author as the current feature PR.
+        default: false
+        required: false
+        type: boolean
+
+      label_name:
+        description: >
+          What label to look for on the PR that requires a documentation PR.
+          Used only when the description does not link to docs.
+        default: "needs-ton-docs"
+        required: false
+        type: string
+
+      from_branch:
+        description: >
+          The source branch from which the PR should be made to be checked.
+          If unsure, leave the default value *, which allows any source branch.
+        default: "*"
+        required: false
+        type: string
+
+      into_branch:
+        description: >
+          The target (release) branch into which the PR is being merged.
+          Usually, it's either main or master,
+          since releases happen only after something appears there.
+        default: "main"
+        required: false
+        type: string
+
+# Read-only permissions for the GITHUB_TOKEN, no shared secrets otherwise
+permissions: read-all
+
+jobs:
+  release-gate:
+    name: "Has a linked PR"
+    # name: "Provides updates"
+    runs-on: ubuntu-latest
+    # Only on new requests, and only when they target the `into_branch`.
+    # If the `from_branch` is not "*" and the request is not done from it,
+    # then it is skipped.
+    #
+    # Yet, requests from forks that target `into_branch` are never skipped,
+    # regardless of the value of the `from_branch`.
+    if: |
+      (
+        github.event_name == 'pull_request' ||
+        github.event_name == 'pull_request_target'
+      ) &&
+      inputs.into_branch == github.event.pull_request.base.ref &&
+      (
+        inputs.from_branch == '*' ||
+        github.repository != github.event.pull_request.head.repo.full_name ||
+        inputs.from_branch == github.event.pull_request.head.ref
+      )
+    env:
+      SHOULD_ERROR: ${{ inputs.should_error }}
+      REQUIRE_SAME_AUTHOR: ${{ inputs.require_same_author }}
+      LABEL_NAME: ${{ inputs.label_name }}
+    steps:
+      - name: Check for linked docs PR
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            // Env vars
+            const labelName = process.env.LABEL_NAME!;
+            const shouldError = JSON.parse(process.env.SHOULD_ERROR ?? 'false');
+            // Logic
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const hasLabel = labels.includes(labelName);
+            const body = context.payload.pull_request.body ?? '';
+            // NOTE: update according to the current repo:
+            const docsLinkPattern = /https:\/\/github\.com\/ton-org\/docs\/pull\/(\d+)/;
+            const docsTextPattern = /(?:ton-?\s*)?docs?(?:\s+[mp]r)?:?/;
+            const linkPattern = new RegExp(`\\b${docsTextPattern.source}\s+(?:${docsLinkPattern.source})`, 'i');
+            const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
+            const link = body.match(linkPattern);
+            const comment = body.match(commentPattern);
+            if (hasLabel) {
+              if (!link) {
+                const output = [
+                  `Due to the label ${labelName}, this request requires a documentation PR to be linked.`,
+                  ...(comment === null ? [
+                    'Please, open the documentation PR and add the following to the description of this one.'
+                  ] : [
+                    'Please, uncomment the link.'
+                  ]),
+                  'Docs PR: <link/to/pr/in/ton-org/docs>',
+                ].join('\n');
+                if (shouldError) {
+                  core.setFailed(output);
+                  process.exit(1);
+                } else {
+                  core.info(output);
+                }
+              }
+            } else {
+              if (!link && !comment) {
+                const output = [
+                  [
+                    'Due to the uncommented pattern in the description,',
+                    'this request requires a documentation PR to be linked.',
+                  ].join(' '),
+                  'Please, open the documentation PR and add the following to the description of this one.'
+                  'Docs PR: <link/to/pr/in/ton-org/docs>',
+                ].join('\n');
+                if (shouldError) {
+                  core.setFailed(output);
+                  process.exit(1);
+                } else {
+                  core.info(output);
+                }
+              }
+            }
+            if (link) {
+              core.exportVariable('PULL_ID', link[1]!);
+            }
+            process.exit(0);
+
+      - name: Check whether the same author has opened the linked PR
+        if: success() && env.REQUIRE_SAME_AUTHOR == 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            // Env vars
+            const shouldError = JSON.parse(process.env.SHOULD_ERROR ?? 'false');
+            const requireSameAuthor = JSON.parse(process.env.REQUIRE_SAME_AUTHOR ?? 'true');
+            // TODO: find the author.
