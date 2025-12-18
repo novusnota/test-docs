@@ -48,7 +48,6 @@ permissions: read-all
 jobs:
   release-gate:
     name: "Has a linked PR"
-    # name: "Provides updates"
     runs-on: ubuntu-latest
     # Only on new requests, and only when they target the `into_branch`.
     # If the `from_branch` is not "*" and the request is not done from it,
@@ -84,7 +83,8 @@ jobs:
             const hasLabel = labels.includes(labelName);
             const body = context.payload.pull_request.body ?? '';
             // NOTE: update according to the current repo:
-            const docsLinkPattern = /https:\/\/github\.com\/ton-org\/docs\/pull\/(\d+)/;
+            const docsLinkPattern = /https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+)/;
+            // const docsLinkPattern = /https:\/\/github\.com\/ton-org\/docs\/pull\/(\d+)/;
             const docsTextPattern = /(?:ton-?\s*)?docs?(?:\s+[mp]r)?:?/;
             const linkPattern = new RegExp(`\\b${docsTextPattern.source}\s+(?:${docsLinkPattern.source})`, 'i');
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
