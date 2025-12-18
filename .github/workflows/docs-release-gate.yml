@@ -92,7 +92,7 @@ jobs:
             const comment = body.match(commentPattern);
             console.log(hasLabel, link, comment);
             if (hasLabel) {
-              if (!link) {
+              if (link === null) {
                 const output = [
                   `Due to the label ${labelName}, this request requires a documentation PR to be linked.`,
                   ...(comment === null ? [
@@ -110,7 +110,7 @@ jobs:
                 }
               }
             } else {
-              if (!link && !comment) {
+              if (link === null && comment === null) {
                 const output = [
                   [
                     'Due to the uncommented pattern in the description,',
@@ -127,7 +127,7 @@ jobs:
                 }
               }
             }
-            if (link) {
+            if (link !== null) {
               core.exportVariable('PULL_ID', link[1]);
             }
             process.exit(0);
