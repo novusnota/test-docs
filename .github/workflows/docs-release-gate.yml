@@ -20,7 +20,7 @@ on:
       label_name:
         description: >
           What label to look for on the PR that requires a documentation PR.
-          Used only when the description does not link to docs.
+          When no such label is found, the workflow looks for uncommented links to docs instead.
         default: "needs-ton-docs"
         required: false
         type: string
@@ -90,7 +90,6 @@ jobs:
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
             const link = body.match(linkPattern);
             const comment = body.match(commentPattern);
-            console.log(hasLabel, link, comment);
             if (hasLabel) {
               if (link === null) {
                 const output = [
@@ -106,7 +105,7 @@ jobs:
                   core.setFailed(output);
                   process.exit(1);
                 } else {
-                  core.info(output);
+                  core.warning(output);
                 }
               }
             } else {
@@ -123,7 +122,7 @@ jobs:
                   core.setFailed(output);
                   process.exit(1);
                 } else {
-                  core.info(output);
+                  core.warning(output);
                 }
               }
             }
