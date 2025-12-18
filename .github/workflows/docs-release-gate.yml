@@ -90,6 +90,7 @@ jobs:
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
             const link = body.match(linkPattern);
             const comment = body.match(commentPattern);
+            console.log(hasLabel, link, comment);
             if (hasLabel) {
               if (!link) {
                 const output = [
