@@ -1,9 +1,12 @@
 name: TON Docs
 
-# Location of TON Docs
+# Location of the docs
 env:
-  OWNER: "ton-docs"
-  REPO: "docs"
+  OWNER: "novusnota"
+  REPO: "test-docs"
+  # NOTE: return to this:
+  # OWNER: "ton-org"
+  # REPO: "docs"
 
 on:
   workflow_call:
@@ -83,14 +86,14 @@ jobs:
             // Env vars
             const labelName = process.env.LABEL_NAME;
             const shouldError = JSON.parse(process.env.SHOULD_ERROR ?? 'false');
+            const owner = process.env.OWNER ?? 'ton-org';
+            const repo = process.env.REPO ?? 'docs';
             // Logic
             const labels = context.payload.pull_request.labels.map(l => l.name);
             const hasLabel = labels.includes(labelName);
             const body = context.payload.pull_request.body ?? '';
             const docsTextPattern = /(?:ton-?\s*)?docs?(?:\s+[mp]r)?:?/;
-            // TODO: move to env, reuse below too:
-            const docsLinkPattern = /(?:https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+))/;
-            // const docsLinkPattern = /https:\/\/github\.com\/novusnota\/test-docs\/pull\/(\d+)/;
+            const docsLinkPattern = new RegExp(`(?:https://github\\.com/)?${owner}/${repo}/pull/(\\d+)`);
             const linkPattern = new RegExp(`\\b${docsTextPattern.source}\s*(?:${docsLinkPattern.source})`, 'i');
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\s*(?:${docsLinkPattern.source})?`, 'i');
             const link = body.match(linkPattern);
@@ -104,7 +107,7 @@ jobs:
                   ] : [
                     'Please, uncomment the link.'
                   ]),
-                  'Docs PR: <link/to/pr/in/ton-org/docs>',
+                  `Docs PR: <https/link/to/pr/in/${owner}/${repo}>`,
                 ].join('\n');
                 if (shouldError) {
                   core.setFailed(output);
@@ -121,7 +124,7 @@ jobs:
                     'this request requires a documentation PR to be linked.',
                   ].join(' '),
                   'Please, open the documentation PR and add the following to the description of this one.',
-                  'Docs PR: <link/to/pr/in/ton-org/docs>',
+                  `Docs PR: <https/link/to/pr/in/${owner}/${repo}>`,
                 ].join('\n');
                 if (shouldError) {
                   core.setFailed(output);
@@ -147,14 +150,12 @@ jobs:
             }
             const shouldError = JSON.parse(process.env.SHOULD_ERROR ?? 'false');
             const requireSameAuthor = JSON.parse(process.env.REQUIRE_SAME_AUTHOR ?? 'true');
-            const pullNumber = Number(process.env.PULL_ID);
+            const owner = process.env.OWNER ?? 'ton-org';
+            const repo = process.env.REPO ?? 'docs';
+            const pull_number = Number(process.env.PULL_ID);
             // Logic
             const author = context.payload.sender.login;
-            const { data: pr } = await github.rest.pulls.get({
-              owner: 'ton-org',
-              repo: 'docs',
-              pull_number: pullNumber,
-            });
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number });
             if (pr.user.login != author) {
               core.setFailed([
                 'Author of this PR does not match the author of the documentation one!',
