@@ -17,7 +17,7 @@ In order to use the workflow, the feature repo in question should:
    ```yml
    on:
      pull_request_target:
-       types: [opened, edited]
+       types: [opened, edited, labeled, unlabeled]
    permissions: read-all
    jobs:
      docs-release-gate:
