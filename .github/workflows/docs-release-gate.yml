@@ -98,18 +98,19 @@ jobs:
             const commentPattern = new RegExp(`(?<=<!--)\\s*${docsTextPattern.source}\\s*(?:${docsLinkPattern.source})?`, 'i');
             const link = body.match(linkPattern);
             const comment = body.match(commentPattern);
-            console.log(hasLabel, link, comment, linkPattern?.source, commentPattern?.source);
             if (hasLabel) {
-              if (link === null) {
-                const output = [
-                  `Due to the label ${labelName}, this request requires a documentation PR to be linked.`,
-                  ...(comment === null ? [
-                    'Please, open the documentation PR and add the following to the description of this one.'
-                  ] : [
-                    'Please, uncomment the link — remove the surrounding <!-- and -->.'
-                  ]),
-                  `Docs PR: <https/link/to/pr/in/${owner}/${repo}>`,
-                ].join('\n');
+              const pfx = `Due to the label ${labelName}, this request requires a documentation PR to be linked.`;
+              const sfx = `Docs PR: <https/link/to/pr/in/${owner}/${repo}>`;
+              if (!link) {
+                const output = `${pfx}\nPlease, open the documentation PR and add the following to the description of this one.\n${sfx}`;
+                if (shouldError) {
+                  core.setFailed(output);
+                  process.exit(1);
+                } else {
+                  core.warning(output);
+                }
+              } else if (comment) {
+                const output = `${pfx}\nPlease, uncomment the link — remove the surrounding <!-- and -->.\n${sfx}`;
                 if (shouldError) {
                   core.setFailed(output);
                   process.exit(1);
@@ -118,14 +119,15 @@ jobs:
                 }
               }
             } else {
-              if (link === null && comment === null) {
+              if (link && comment || !link && !comment) {
                 const output = [
                   [
                     'Due to the uncommented pattern in the description,',
-                    'this request requires a documentation PR to be linked.',
+                    'this request requires a TON Docs PR to be linked.',
                   ].join(' '),
-                  'Please, open the documentation PR and add the following to the description of this one.',
+                  'Please, open the documentation PR and add the following line to the description of this one.',
                   `Docs PR: <https/link/to/pr/in/${owner}/${repo}>`,
+                  `If this PR does not require documentation updates, please add: <!-- Docs PR: none -->`,
                 ].join('\n');
                 if (shouldError) {
                   core.setFailed(output);
@@ -135,7 +137,7 @@ jobs:
                 }
               }
             }
-            if (link !== null) {
+            if (link) {
               core.exportVariable('PULL_ID', link[1]);
             }
             process.exit(0);
